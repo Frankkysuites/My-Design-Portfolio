@@ -312,10 +312,37 @@ export default function Admin() {
     }
   };
 
+const saveProjectsToCloud = async (updatedProjects: Project[]) => {
+  const JSONBIN_BIN_ID = "6a162a588ef04f45381f4b84";
+  const JSONBIN_API_KEY = "$2a$10$2I7wxlcZe608gOfKaQ7P.eaEJseoNK6tBLKrkL83wwQDS61gZzs7S";
+  
+  try {
+    const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': JSONBIN_API_KEY
+      },
+      body: JSON.stringify({ projects: updatedProjects })
+    });
+    
+    if (response.ok) {
+      console.log('✅ Projects saved to JSONBin successfully');
+      alert('Projects saved to cloud! All visitors will see them.');
+    } else {
+      console.error('Failed to save to JSONBin');
+    }
+  } catch (error) {
+    console.error('Error saving to JSONBin:', error);
+    alert('Failed to save to cloud, but projects saved locally.');
+  }
+};
+
   const saveProjects = (updatedProjects: Project[]) => {
-    setProjects(updatedProjects);
-    localStorage.setItem("portfolio_projects", JSON.stringify(updatedProjects));
-  };
+  setProjects(updatedProjects);
+  localStorage.setItem("portfolio_projects", JSON.stringify(updatedProjects));
+  saveProjectsToCloud(updatedProjects);
+};
 
   const saveProfile = (updatedProfile: Profile) => {
     setProfile(updatedProfile);
