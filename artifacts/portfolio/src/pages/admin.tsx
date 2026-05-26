@@ -328,13 +328,11 @@ const saveProjectsToCloud = async (updatedProjects: Project[]) => {
     
     if (response.ok) {
       console.log('✅ Projects saved to JSONBin successfully');
-      alert('Projects saved to cloud! All visitors will see them.');
     } else {
       console.error('Failed to save to JSONBin');
     }
   } catch (error) {
     console.error('Error saving to JSONBin:', error);
-    alert('Failed to save to cloud, but projects saved locally.');
   }
 };
 
