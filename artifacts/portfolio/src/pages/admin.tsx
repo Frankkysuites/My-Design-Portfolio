@@ -117,7 +117,7 @@ const DEFAULT_PROFILE: Profile = {
   },
 };
 
-const DEFAULT_PASSWORD = "admin123";
+const DEFAULT_PASSWORD = "your_secure_password";
 
 export default function Admin() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -428,7 +428,6 @@ export default function Admin() {
             <Button type="submit" className="w-full">Login</Button>
           </form>
           <p className="text-sm text-gray-500 mt-4 text-center">
-            Default password: admin123
           </p>
         </div>
       </div>
