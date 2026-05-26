@@ -323,7 +323,7 @@ export default function Admin() {
     setIsEditingProfile(false);
   };
 
-  const handleAddProject = () => {
+  const handleAddProject = async () => {
     if (!newProject.title || !newProject.imageUrl) {
       alert("Please fill in title and cover image");
       return;
@@ -343,13 +343,13 @@ export default function Admin() {
     setNewFile({ id: Date.now(), type: "image", url: "", title: "", description: "" });
   };
 
-  const deleteProject = (id: number) => {
+  const deleteProject = async (id: number) => {
     if (confirm("Are you sure you want to delete this project?")) {
       await saveProjects(projects.filter(p => p.id !== id));
     }
   };
 
-  const updateProject = (updatedProject: Project) => {
+  const updateProject = async (updatedProject: Project) => {
     await saveProjects(projects.map(p => p.id === updatedProject.id ? updatedProject : p));
     setIsEditingProject(null);
     setNewFile({ id: Date.now(), type: "image", url: "", title: "", description: "" });
