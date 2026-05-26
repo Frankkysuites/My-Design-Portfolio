@@ -428,7 +428,7 @@ export default function Admin() {
             <Button type="submit" className="w-full">Login</Button>
           </form>
           <p className="text-sm text-gray-500 mt-4 text-center">
-            
+            Default password: admin123
           </p>
         </div>
       </div>
