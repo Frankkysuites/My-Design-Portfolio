@@ -158,12 +158,21 @@ export default function Admin() {
 
   // Cloud password functions
   const getPasswordFromCloud = async () => {
+    // Add cache-busting timestamp to prevent caching
+    const timestamp = Date.now();
+    console.log("📡 Fetching password from cloud with timestamp:", timestamp);
     try {
-      const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-        headers: { 'X-Master-Key': JSONBIN_API_KEY }
+      const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest?nocache=${timestamp}`, {
+        headers: { 
+          'X-Master-Key': JSONBIN_API_KEY,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
       });
       const result = await response.json();
-      return result.record?.adminPassword || null;
+      const password = result.record?.adminPassword || null;
+      console.log("📡 Cloud password fetched:", password);
+      return password;
     } catch (error) {
       console.error('Failed to get password from cloud:', error);
       return null;
@@ -171,15 +180,20 @@ export default function Admin() {
   };
 
   const savePasswordToCloud = async (pass: string) => {
+    console.log("📝 Saving password to cloud:", pass);
+    const timestamp = Date.now();
     try {
-      const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-        headers: { 'X-Master-Key': JSONBIN_API_KEY }
+      const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest?nocache=${timestamp}`, {
+        headers: { 
+          'X-Master-Key': JSONBIN_API_KEY,
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
+        }
       });
       const result = await response.json();
       const currentProjects = result.record?.projects || [];
       const currentProfile = result.record?.profile || {};
       
-      await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+      const saveResponse = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -191,9 +205,17 @@ export default function Admin() {
           adminPassword: pass
         })
       });
-      console.log('✅ Password saved to cloud');
+      
+      if (saveResponse.ok) {
+        console.log("✅ Password saved to cloud successfully at", new Date().toLocaleTimeString());
+        return true;
+      } else {
+        console.error("❌ Failed to save password. Status:", saveResponse.status);
+        return false;
+      }
     } catch (error) {
-      console.error('Failed to save password to cloud:', error);
+      console.error("❌ Error saving password:", error);
+      return false;
     }
   };
 
