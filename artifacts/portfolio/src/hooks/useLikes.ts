@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
-
-const JSONBIN_BIN_ID = "6a162a588ef04f45381f4b84";
-const JSONBIN_API_KEY = "$2a$10$loWVTqd3bRDpzhlqgZSmA.fMkYgulcZ32nMc/RHLNPhwkokq8bKCi";
+import { supabase } from "@/lib/supabase";
 
 export function useLikes(projectId: number) {
   const [liked, setLiked] = useState(false);
@@ -11,19 +9,25 @@ export function useLikes(projectId: number) {
   useEffect(() => {
     const fetchLikes = async () => {
       try {
-        const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-          headers: { 'X-Master-Key': JSONBIN_API_KEY }
-        });
-        const result = await response.json();
-        const likes = result.record?.likes || {};
-        setLiked(likes[projectId]?.liked || false);
-        setLikeCount(likes[projectId]?.count || 0);
+        const { data, error } = await supabase
+          .from('likes')
+          .select('liked, count')
+          .eq('project_id', projectId)
+          .single();
+        
+        if (error && error.code !== 'PGRST116') throw error;
+        
+        if (data) {
+          setLiked(data.liked || false);
+          setLikeCount(data.count || 0);
+        }
       } catch (error) {
         console.error('Failed to fetch likes:', error);
       } finally {
         setIsLoading(false);
       }
     };
+    
     fetchLikes();
   }, [projectId]);
 
@@ -32,34 +36,20 @@ export function useLikes(projectId: number) {
     const newCount = newLiked ? likeCount + 1 : likeCount - 1;
     
     try {
-      const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-        headers: { 'X-Master-Key': JSONBIN_API_KEY }
-      });
-      const result = await response.json();
-      const currentLikes = result.record?.likes || {};
+      const { error } = await supabase
+        .from('likes')
+        .upsert({
+          project_id: projectId,
+          liked: newLiked,
+          count: newCount
+        }, { onConflict: 'project_id' });
       
-      const updatedLikes = {
-        ...currentLikes,
-        [projectId]: { liked: newLiked, count: newCount }
-      };
-      
-      await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Master-Key': JSONBIN_API_KEY
-        },
-        body: JSON.stringify({
-          projects: result.record?.projects || [],
-          profile: result.record?.profile || {},
-          likes: updatedLikes
-        })
-      });
+      if (error) throw error;
       
       setLiked(newLiked);
       setLikeCount(newCount);
     } catch (error) {
-      console.error('Failed to save like:', error);
+      console.error('Failed to update like:', error);
     }
   };
 

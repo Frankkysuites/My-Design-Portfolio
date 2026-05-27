@@ -15,15 +15,12 @@ import {
 } from "lucide-react";
 import { FaDribbble, FaBehance, FaLinkedin, FaInstagram, FaWhatsapp } from "react-icons/fa";
 import { useLikes } from "@/hooks/useLikes";
-import type { Project, ProjectFile } from "@/types/project";
-
-const JSONBIN_BIN_ID = "6a162a588ef04f45381f4b84";
-const JSONBIN_API_KEY = "$2a$10$loWVTqd3bRDpzhlqgZSmA.fMkYgulcZ32nMc/RHLNPhwkokq8bKCi";
+import { supabase } from "@/lib/supabase";
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
-  const [project, setProject] = useState<Project | null>(null);
+  const [project, setProject] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
@@ -33,23 +30,24 @@ export default function ProjectDetail() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-          headers: { 'X-Master-Key': JSONBIN_API_KEY }
-        });
-        const result = await response.json();
+        // Fetch project
+        const { data: projectData, error: projectError } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('id', parseInt(id!))
+          .single();
         
-        // Fetch project from cloud
-        let projects = [];
-        if (result.record && result.record.projects) {
-          projects = result.record.projects;
-        }
-        const found = projects.find(p => p.id === parseInt(id!));
-        setProject(found || null);
+        if (projectError) throw projectError;
+        setProject(projectData);
         
-        // Fetch profile from cloud
-        if (result.record && result.record.profile) {
-          setProfile(result.record.profile);
-        }
+        // Fetch profile
+        const { data: profileData, error: profileError } = await supabase
+          .from('profile')
+          .select('*')
+          .eq('id', 1)
+          .single();
+        
+        if (profileData) setProfile(profileData);
       } catch (error) {
         console.error('Failed to fetch data:', error);
         setProject(null);
@@ -63,9 +61,9 @@ export default function ProjectDetail() {
 
   const getAllImages = () => {
     if (!project) return [];
-    const images = [{ url: project.imageUrl, type: "cover" }];
+    const images = [{ url: project.image_url, type: "cover" }];
     if (project.files) {
-      project.files.forEach(file => {
+      project.files.forEach((file: any) => {
         if (file.type === "image") {
           images.push({ url: file.url, type: "file" });
         }
@@ -85,10 +83,6 @@ export default function ProjectDetail() {
   const closeLightbox = () => {
     setIsLightboxOpen(false);
     document.body.style.overflow = "auto";
-  };
-
-  const handleLike = () => {
-    toggleLike();
   };
 
   const handleContact = () => {
@@ -113,10 +107,10 @@ export default function ProjectDetail() {
     );
   }
 
-  const hasVideo = (project.files || []).some(f => f.type === "video");
-  const hasPdf = (project.files || []).some(f => f.type === "pdf");
-  const videoFiles = (project.files || []).filter(f => f.type === "video");
-  const pdfFiles = (project.files || []).filter(f => f.type === "pdf");
+  const hasVideo = (project.files || []).some((f: any) => f.type === "video");
+  const hasPdf = (project.files || []).some((f: any) => f.type === "pdf");
+  const videoFiles = (project.files || []).filter((f: any) => f.type === "video");
+  const pdfFiles = (project.files || []).filter((f: any) => f.type === "pdf");
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
@@ -139,7 +133,7 @@ export default function ProjectDetail() {
       <div className="relative bg-black">
         <div className="relative h-[50vh] md:h-[60vh] overflow-hidden">
           <img 
-            src={project.imageUrl} 
+            src={project.image_url} 
             alt={project.title}
             className="w-full h-full object-cover object-center"
           />
@@ -163,7 +157,7 @@ export default function ProjectDetail() {
       <div className="max-w-7xl mx-auto px-6 py-6">
         <div className="flex justify-start">
           <button
-            onClick={handleLike}
+            onClick={toggleLike}
             className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full transition-all duration-200 group"
           >
             <Heart 
@@ -174,24 +168,15 @@ export default function ProjectDetail() {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Rest of the component - keep the same JSX structure */}
       <div className="max-w-7xl mx-auto px-6 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          {/* Left Column */}
           <div className="lg:col-span-2 space-y-8">
             <section>
               <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
                 {project.description}
               </p>
             </section>
-
-            <div className="flex flex-wrap gap-2">
-              {["Adobe Suite", "Figma", "Illustrator", "Photoshop"].map(tool => (
-                <span key={tool} className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-xs text-gray-600 dark:text-gray-400">
-                  {tool}
-                </span>
-              ))}
-            </div>
 
             {/* Image Gallery - Tiles Grid */}
             <section>
@@ -218,13 +203,6 @@ export default function ProjectDetail() {
                   </div>
                 ))}
               </div>
-              
-              <button
-                onClick={() => openLightbox(0)}
-                className="w-full mt-4 text-center text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 py-2 border border-gray-200 dark:border-gray-700 rounded-lg"
-              >
-                View all {allImages.length} images →
-              </button>
             </section>
 
             {/* Videos Section */}
@@ -232,7 +210,7 @@ export default function ProjectDetail() {
               <section>
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Videos</h2>
                 <div className="space-y-4">
-                  {videoFiles.map((file) => (
+                  {videoFiles.map((file: any) => (
                     <div key={file.id} className="rounded-xl overflow-hidden bg-black">
                       <video src={file.url} controls className="w-full" />
                     </div>
@@ -246,7 +224,7 @@ export default function ProjectDetail() {
               <section>
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Documents</h2>
                 <div className="space-y-2">
-                  {pdfFiles.map((file) => (
+                  {pdfFiles.map((file: any) => (
                     <div key={file.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
@@ -276,14 +254,6 @@ export default function ProjectDetail() {
                     <span className="text-gray-500 dark:text-gray-400">Category</span>
                     <span className="text-gray-700 dark:text-gray-300">{project.category}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500 dark:text-gray-400">Published</span>
-                    <span className="text-gray-700 dark:text-gray-300">{new Date(project.createdAt).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500 dark:text-gray-400">Images</span>
-                    <span className="text-gray-700 dark:text-gray-300">{allImages.length}</span>
-                  </div>
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-2">
                     <div className="flex justify-between">
                       <span className="text-gray-500 dark:text-gray-400">Views</span>
@@ -295,7 +265,7 @@ export default function ProjectDetail() {
 
               <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 text-center">
                 <Avatar className="w-16 h-16 mx-auto mb-2">
-                  <img src={profile?.imageUrl || "https://picsum.photos/id/64/100/100"} alt="Designer" className="rounded-full" />
+                  <img src={profile?.image_url || "https://picsum.photos/id/64/100/100"} alt="Designer" className="rounded-full" />
                 </Avatar>
                 <h4 className="font-semibold text-gray-900 dark:text-white">{profile?.name || "Frank Aronu"}</h4>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{profile?.title || "Designer"}</p>
@@ -318,7 +288,7 @@ export default function ProjectDetail() {
       {isLightboxOpen && (
         <div className="fixed inset-0 z-50 bg-black overflow-y-auto">
           <div className="sticky top-0 z-10 flex justify-between items-center p-4 bg-black/80 backdrop-blur-sm">
-            <span className="text-white text-sm">{allImages.length} images</span>
+            <span className="text-white text-sm">{allImages.length} images}</span>
             <button
               onClick={closeLightbox}
               className="text-white hover:text-gray-300 transition-colors"

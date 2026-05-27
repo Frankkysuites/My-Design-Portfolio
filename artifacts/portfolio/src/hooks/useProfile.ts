@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 type SocialLinks = {
   dribbble: string;
@@ -41,28 +42,27 @@ export function useProfile() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await fetch(`https://api.jsonbin.io/v3/b/6a162a588ef04f45381f4b84/latest`, {
-          headers: { 
-            'X-Master-Key': '$2a$10$loWVTqd3bRDpzhlqgZSmA.fMkYgulcZ32nMc/RHLNPhwkokq8bKCi'
-          }
-        });
-        const result = await response.json();
+        const { data, error } = await supabase
+          .from('profile')
+          .select('*')
+          .eq('id', 1)
+          .single();
         
-        if (result.record && result.record.profile) {
-          setProfile(result.record.profile);
-          console.log('✅ Profile loaded from cloud');
-        } else {
-          const stored = localStorage.getItem("portfolio_profile");
-          if (stored) {
-            setProfile(JSON.parse(stored));
-          }
+        if (error && error.code !== 'PGRST116') throw error;
+        
+        if (data) {
+          setProfile({
+            name: data.name || DEFAULT_PROFILE.name,
+            title: data.title || DEFAULT_PROFILE.title,
+            location: data.location || DEFAULT_PROFILE.location,
+            email: data.email || DEFAULT_PROFILE.email,
+            bio: data.bio || DEFAULT_PROFILE.bio,
+            imageUrl: data.image_url || DEFAULT_PROFILE.imageUrl,
+            social: data.social || DEFAULT_PROFILE.social,
+          });
         }
       } catch (error) {
         console.error('Failed to fetch profile:', error);
-        const stored = localStorage.getItem("portfolio_profile");
-        if (stored) {
-          setProfile(JSON.parse(stored));
-        }
       } finally {
         setIsLoading(false);
       }
