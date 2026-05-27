@@ -164,21 +164,51 @@ export default function Admin() {
   }, []);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
-    
-    const storedProjects = localStorage.getItem("portfolio_projects");
-    const storedProfile = localStorage.getItem("portfolio_profile");
-    
-    if (storedProjects) {
-      setProjects(JSON.parse(storedProjects));
-    } else {
+  if (!isAuthenticated) return;
+
+  // Load profile from localStorage (still needed for profile data)
+  const storedProfile = localStorage.getItem("portfolio_profile");
+  if (storedProfile) {
+    setProfile(JSON.parse(storedProfile));
+  }
+
+  // Load projects from cloud
+  const loadProjectsFromCloud = async () => {
+    try {
+      const response = await fetch(`https://api.jsonbin.io/v3/b/6a162a588ef04f45381f4b84/latest`, {
+        headers: { 
+          'X-Master-Key': '$2a$10$2I7wxlcZe608gOfKaQ7P.eaEJseoNK6tBLKrkL83wwQDS61gZzs7S'
+        }
+      });
+      const result = await response.json();
+      let projects = [];
+      if (result.record && result.record.projects) {
+        projects = result.record.projects;
+      }
+      
+      if (projects.length > 0) {
+        setProjects(projects);
+      } else {
+        // If cloud is empty, use default projects
+        setProjects(DEFAULT_PROJECTS);
+        // Also save defaults to cloud
+        await fetch(`https://api.jsonbin.io/v3/b/6a162a588ef04f45381f4b84`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Master-Key': '$2a$10$2I7wxlcZe608gOfKaQ7P.eaEJseoNK6tBLKrkL83wwQDS61gZzs7S'
+          },
+          body: JSON.stringify({ projects: DEFAULT_PROJECTS })
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load from cloud:', error);
       setProjects(DEFAULT_PROJECTS);
     }
-    
-    if (storedProfile) {
-      setProfile(JSON.parse(storedProfile));
-    }
-  }, [isAuthenticated]);
+  };
+  
+  loadProjectsFromCloud();
+}, [isAuthenticated]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -336,10 +366,30 @@ const saveProjectsToCloud = async (updatedProjects: Project[]) => {
   }
 };
 
-  const saveProjects = (updatedProjects: Project[]) => {
+  const saveProjects = async (updatedProjects: Project[]) => {
   setProjects(updatedProjects);
-  localStorage.setItem("portfolio_projects", JSON.stringify(updatedProjects));
-  saveProjectsToCloud(updatedProjects);
+  
+  // Save directly to cloud
+  try {
+    const response = await fetch(`https://api.jsonbin.io/v3/b/6a162a588ef04f45381f4b84`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': '$2a$10$2I7wxlcZe608gOfKaQ7P.eaEJseoNK6tBLKrkL83wwQDS61gZzs7S'
+      },
+      body: JSON.stringify({ projects: updatedProjects })
+    });
+    
+    if (response.ok) {
+      console.log('✅ Projects saved to cloud');
+      alert('Project saved! All visitors can see it.');
+    } else {
+      alert('Failed to save to cloud. Please try again.');
+    }
+  } catch (error) {
+    console.error('Save error:', error);
+    alert('Network error. Please try again.');
+  }
 };
 
   const saveProfile = (updatedProfile: Profile) => {

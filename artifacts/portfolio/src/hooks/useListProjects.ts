@@ -10,7 +10,7 @@ export function useListProjects(params?: { category?: string }) {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        console.log('Fetching projects from JSONBin...');
+        console.log('Fetching projects from cloud...');
         const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
           headers: { 
             'X-Master-Key': JSONBIN_API_KEY
@@ -18,27 +18,23 @@ export function useListProjects(params?: { category?: string }) {
         });
         
         const result = await response.json();
-        console.log('API Response:', result);
         
-        // The projects are inside record.projects
+        // Extract projects from cloud
         let projects = [];
         if (result.record && result.record.projects) {
           projects = result.record.projects;
-        } else if (Array.isArray(result)) {
-          projects = result;
-        } else if (result.projects) {
-          projects = result.projects;
         }
         
-        console.log('Projects loaded:', projects.length);
+        console.log(`Loaded ${projects.length} projects from cloud`);
         
+        // Filter if needed
         if (params?.category && params.category !== "All") {
           projects = projects.filter((p: any) => p.category === params.category);
         }
         
         setData(projects);
       } catch (error) {
-        console.error('Failed to fetch projects:', error);
+        console.error('Failed to fetch from cloud:', error);
         setData([]);
       } finally {
         setIsLoading(false);
