@@ -73,7 +73,18 @@ export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const projectFileInputRef = useRef<HTMLInputElement>(null);
+  
+  // New file for current project
+  const [newFile, setNewFile] = useState<ProjectFile>({
+    id: Date.now(),
+    type: "image",
+    url: "",
+    title: "",
+    description: "",
+  });
   
   const [newProject, setNewProject] = useState<Project>({
     id: 0,
@@ -96,14 +107,12 @@ export default function Admin() {
     if (!isAuthenticated) return;
     
     const loadData = async () => {
-      // Load projects
       const { data: projectsData } = await supabase
         .from('projects')
         .select('*')
         .order('created_at', { ascending: false });
       if (projectsData) setProjects(projectsData);
       
-      // Load profile
       const { data: profileData } = await supabase
         .from('profile')
         .select('*')
@@ -169,9 +178,113 @@ export default function Admin() {
     handleLogout();
   };
 
+  // Convert file to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isCoverImage: boolean = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB');
+      return;
+    }
+    
+    setUploading(true);
+    try {
+      const base64 = await fileToBase64(file);
+      if (isCoverImage) {
+        if (isEditingProject) {
+          setIsEditingProject({ ...isEditingProject, image_url: base64 });
+        } else {
+          setNewProject({ ...newProject, image_url: base64 });
+        }
+      }
+    } catch (error) {
+      alert('Failed to upload image');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleProjectFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    let type: "image" | "video" | "pdf" = "image";
+    if (file.type.startsWith('video/')) type = "video";
+    else if (file.type === 'application/pdf') type = "pdf";
+    
+    setUploading(true);
+    try {
+      const base64 = await fileToBase64(file);
+      setNewFile({ ...newFile, url: base64, type });
+    } catch (error) {
+      alert('Failed to upload file');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const addFileToProject = () => {
+    if (!newFile.title || !newFile.url) {
+      alert("Please fill in file title and select a file");
+      return;
+    }
+    
+    if (isEditingProject) {
+      setIsEditingProject({
+        ...isEditingProject,
+        files: [...(isEditingProject.files || []), { ...newFile, id: Date.now() }]
+      });
+    } else {
+      setNewProject({
+        ...newProject,
+        files: [...(newProject.files || []), { ...newFile, id: Date.now() }]
+      });
+    }
+    
+    setNewFile({ id: Date.now(), type: "image", url: "", title: "", description: "" });
+    if (projectFileInputRef.current) projectFileInputRef.current.value = '';
+  };
+
+  const removeFileFromProject = (fileId: number) => {
+    if (isEditingProject) {
+      setIsEditingProject({
+        ...isEditingProject,
+        files: (isEditingProject.files || []).filter(f => f.id !== fileId)
+      });
+    } else {
+      setNewProject({
+        ...newProject,
+        files: (newProject.files || []).filter(f => f.id !== fileId)
+      });
+    }
+  };
+
+  const getFileIcon = (type: string) => {
+    switch(type) {
+      case "video": return <Video className="w-4 h-4" />;
+      case "pdf": return <FileText className="w-4 h-4" />;
+      default: return <Image className="w-4 h-4" />;
+    }
+  };
+
   const handleAddProject = async () => {
     if (!newProject.title || !newProject.image_url) {
-      alert("Please fill in title and image URL");
+      alert("Please fill in title and cover image");
       return;
     }
     
@@ -203,6 +316,7 @@ export default function Admin() {
       image_url: "",
       files: [],
     });
+    setNewFile({ id: Date.now(), type: "image", url: "", title: "", description: "" });
     alert('Project added successfully!');
   };
 
@@ -237,6 +351,7 @@ export default function Admin() {
     
     setProjects(projects.map(p => p.id === updatedProject.id ? updatedProject : p));
     setIsEditingProject(null);
+    setNewFile({ id: Date.now(), type: "image", url: "", title: "", description: "" });
     alert('Project updated successfully!');
   };
 
@@ -351,6 +466,7 @@ export default function Admin() {
                     <h3 className="font-semibold text-lg">{project.title}</h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{project.category}</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{project.description?.substring(0, 100)}...</p>
+                    <p className="text-xs text-gray-400 mt-1">📎 {project.files?.length || 0} additional files</p>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => setIsEditingProject(project)}>
@@ -414,103 +530,210 @@ export default function Admin() {
         </DialogContent>
       </Dialog>
 
-      {/* Add Project Modal */}
-      <Dialog open={isAddingProject} onOpenChange={setIsAddingProject}>
-        <DialogContent className="max-w-2xl">
-          <DialogTitle>Add New Project</DialogTitle>
+      {/* Add/Edit Project Modal with File Upload */}
+      <Dialog open={isAddingProject || !!isEditingProject} onOpenChange={() => {
+        setIsAddingProject(false);
+        setIsEditingProject(null);
+        setNewFile({ id: Date.now(), type: "image", url: "", title: "", description: "" });
+      }}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogTitle>{isEditingProject ? "Edit Project" : "Add New Project"}</DialogTitle>
           <div className="space-y-4 mt-4">
-            <div>
-              <Label>Title *</Label>
-              <Input
-                value={newProject.title}
-                onChange={(e) => setNewProject({...newProject, title: e.target.value})}
-                placeholder="Project title"
-              />
-            </div>
-            <div>
-              <Label>Category</Label>
-              <select
-                className="w-full border rounded-md p-2"
-                value={newProject.category}
-                onChange={(e) => setNewProject({...newProject, category: e.target.value as "Graphics" | "Product Design"})}
-              >
-                <option value="Graphics">Graphics</option>
-                <option value="Product Design">Product Design</option>
-              </select>
-            </div>
-            <div>
-              <Label>Image URL *</Label>
-              <Input
-                value={newProject.image_url}
-                onChange={(e) => setNewProject({...newProject, image_url: e.target.value})}
-                placeholder="https://picsum.photos/id/20/800/600"
-              />
-            </div>
-            <div>
-              <Label>Description</Label>
-              <Textarea
-                value={newProject.description}
-                onChange={(e) => setNewProject({...newProject, description: e.target.value})}
-                rows={4}
-                placeholder="Project description"
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsAddingProject(false)}>Cancel</Button>
-              <Button onClick={handleAddProject}>Add Project</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Project Modal */}
-      <Dialog open={!!isEditingProject} onOpenChange={() => setIsEditingProject(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogTitle>Edit Project</DialogTitle>
-          {isEditingProject && (
-            <div className="space-y-4 mt-4">
+            {/* Basic Info */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg border-b pb-2">Basic Information</h3>
               <div>
-                <Label>Title</Label>
+                <Label>Title *</Label>
                 <Input
-                  value={isEditingProject.title}
-                  onChange={(e) => setIsEditingProject({...isEditingProject, title: e.target.value})}
+                  value={isEditingProject ? isEditingProject.title : newProject.title}
+                  onChange={(e) => isEditingProject 
+                    ? setIsEditingProject({...isEditingProject, title: e.target.value})
+                    : setNewProject({...newProject, title: e.target.value})
+                  }
+                  placeholder="Project title"
                 />
               </div>
               <div>
                 <Label>Category</Label>
                 <select
                   className="w-full border rounded-md p-2"
-                  value={isEditingProject.category}
-                  onChange={(e) => setIsEditingProject({...isEditingProject, category: e.target.value as "Graphics" | "Product Design"})}
+                  value={isEditingProject ? isEditingProject.category : newProject.category}
+                  onChange={(e) => isEditingProject
+                    ? setIsEditingProject({...isEditingProject, category: e.target.value as "Graphics" | "Product Design"})
+                    : setNewProject({...newProject, category: e.target.value as "Graphics" | "Product Design"})
+                  }
                 >
                   <option value="Graphics">Graphics</option>
                   <option value="Product Design">Product Design</option>
                 </select>
               </div>
               <div>
-                <Label>Image URL</Label>
-                <Input
-                  value={isEditingProject.image_url}
-                  onChange={(e) => setIsEditingProject({...isEditingProject, image_url: e.target.value})}
-                  placeholder="https://picsum.photos/id/20/800/600"
-                />
-              </div>
-              <div>
                 <Label>Description</Label>
                 <Textarea
-                  value={isEditingProject.description}
-                  onChange={(e) => setIsEditingProject({...isEditingProject, description: e.target.value})}
+                  value={isEditingProject ? isEditingProject.description : newProject.description}
+                  onChange={(e) => isEditingProject
+                    ? setIsEditingProject({...isEditingProject, description: e.target.value})
+                    : setNewProject({...newProject, description: e.target.value})
+                  }
                   rows={4}
+                  placeholder="Project description"
                 />
               </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsEditingProject(null)}>Cancel</Button>
-                <Button onClick={() => handleUpdateProject(isEditingProject)}>
-                  <Save className="w-4 h-4 mr-2" /> Save Changes
-                </Button>
+            </div>
+
+            {/* Cover Image Upload */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg border-b pb-2">Cover Image</h3>
+              <div>
+                <Label>Cover Image *</Label>
+                <div className="flex gap-4 items-start flex-wrap mt-1">
+                  <img 
+                    src={isEditingProject ? isEditingProject.image_url : newProject.image_url} 
+                    alt="Preview" 
+                    className="w-32 h-32 object-cover rounded border"
+                    onError={(e) => (e.target as HTMLImageElement).src = "https://via.placeholder.com/150?text=No+Image"}
+                  />
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleFileUpload(e, true)}
+                      className="hidden"
+                      id="cover-image-upload"
+                    />
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => document.getElementById('cover-image-upload')?.click()}
+                      disabled={uploading}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {uploading ? 'Uploading...' : 'Upload Image'}
+                    </Button>
+                    <p className="text-xs text-gray-500 mt-1">or enter URL below</p>
+                    <Input
+                      value={isEditingProject ? isEditingProject.image_url : newProject.image_url}
+                      onChange={(e) => isEditingProject
+                        ? setIsEditingProject({...isEditingProject, image_url: e.target.value})
+                        : setNewProject({...newProject, image_url: e.target.value})
+                      }
+                      placeholder="https://example.com/image.jpg"
+                      className="mt-2 w-80"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-          )}
+
+            {/* Additional Files - Multiple File Upload */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg border-b pb-2">Additional Files</h3>
+              
+              {/* Current Files List */}
+              {((isEditingProject && (isEditingProject.files?.length || 0) > 0) || 
+                (!isEditingProject && (newProject.files?.length || 0) > 0)) && (
+                <div className="space-y-2">
+                  <Label>Files in this project</Label>
+                  <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto border rounded-lg p-2">
+                    {(isEditingProject ? isEditingProject.files : newProject.files).map((file) => (
+                      <div key={file.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 p-2 rounded">
+                        <div className="flex items-center gap-2">
+                          {getFileIcon(file.type)}
+                          <span className="text-sm font-medium">{file.title}</span>
+                          {file.description && <span className="text-xs text-gray-500">- {file.description.substring(0, 50)}</span>}
+                        </div>
+                        <Button size="sm" variant="ghost" onClick={() => removeFileFromProject(file.id)}>
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Add New File */}
+              <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
+                <Label className="mb-2 block">Add File to This Project</Label>
+                <div className="space-y-3">
+                  <div className="flex gap-2 flex-wrap">
+                    <select
+                      className="border rounded-md p-2"
+                      value={newFile.type}
+                      onChange={(e) => setNewFile({...newFile, type: e.target.value as "image" | "video" | "pdf"})}
+                    >
+                      <option value="image">📷 Image</option>
+                      <option value="video">🎥 Video</option>
+                      <option value="pdf">📄 PDF Document</option>
+                    </select>
+                    <input
+                      type="file"
+                      accept="image/*,video/*,application/pdf"
+                      onChange={handleProjectFileUpload}
+                      className="hidden"
+                      id="project-file-upload"
+                      ref={projectFileInputRef}
+                    />
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => document.getElementById('project-file-upload')?.click()}
+                      disabled={uploading}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {uploading ? 'Uploading...' : 'Choose File'}
+                    </Button>
+                  </div>
+                  {newFile.url && <p className="text-xs text-green-600">✓ File ready to add</p>}
+                  <Input
+                    placeholder="File title (e.g., Logo Design, Brand Guidelines, Poster)"
+                    value={newFile.title}
+                    onChange={(e) => setNewFile({...newFile, title: e.target.value})}
+                  />
+                  <Textarea
+                    placeholder="File description (optional)"
+                    value={newFile.description || ""}
+                    onChange={(e) => setNewFile({...newFile, description: e.target.value})}
+                    rows={2}
+                  />
+                  <Button 
+                    size="sm" 
+                    onClick={addFileToProject}
+                    disabled={!newFile.title || !newFile.url}
+                  >
+                    <Plus className="w-4 h-4 mr-2" /> Add This File
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  💡 Tip: Add multiple files - logos, mockups, process work, final deliverables, etc.
+                </p>
+              </div>
+              
+              {/* File Count */}
+              {((isEditingProject && (isEditingProject.files?.length || 0) > 0) || 
+                (!isEditingProject && (newProject.files?.length || 0) > 0)) && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm text-blue-800">
+                    📎 Total: {(isEditingProject ? isEditingProject.files.length : newProject.files.length)} file(s) attached to this project
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button variant="outline" onClick={() => {
+                setIsAddingProject(false);
+                setIsEditingProject(null);
+                setNewFile({ id: Date.now(), type: "image", url: "", title: "", description: "" });
+              }}>
+                Cancel
+              </Button>
+              <Button onClick={() => isEditingProject ? handleUpdateProject(isEditingProject) : handleAddProject()}>
+                <Save className="w-4 h-4 mr-2" /> 
+                {isEditingProject ? "Save Changes" : "Create Project"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
