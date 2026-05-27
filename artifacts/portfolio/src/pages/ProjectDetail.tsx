@@ -14,6 +14,7 @@ import {
   ZoomIn
 } from "lucide-react";
 import { useLikes } from "@/hooks/useLikes";
+import { useLikes } from "@/hooks/useLikes";
 import { FaDribbble, FaBehance, FaLinkedin, FaInstagram, FaWhatsapp } from "react-icons/fa";
 import type { Project, ProjectFile } from "@/types/project";
 
@@ -25,6 +26,7 @@ export default function ProjectDetail() {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
   const [profile, setProfile] = useState<any>(null);
+  const { liked, likeCount, isLoading: likesLoading, toggleLike } = useLikes(parseInt(id!));
   const { liked, likeCount, isLoading: likesLoading, toggleLike } = useLikes(parseInt(id!));
 
   useEffect(() => {
