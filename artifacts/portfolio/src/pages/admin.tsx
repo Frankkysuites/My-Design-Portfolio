@@ -231,24 +231,25 @@ export default function Admin() {
     if (!isAuthenticated) return;
     
     
-        // Load profile from cloud
-        const loadProfileFromCloud = async () => {
-          try {
-            const response = await fetch(`https://api.jsonbin.io/v3/b/6a162a588ef04f45381f4b84/latest?t=${Date.now()}`, {
-              headers: { "X-Master-Key": "$2a$10$6WgXpSq5nZyJ.9eytzMwe.1ZH4Qyk2WeMIQLSjCEOlAp6rc2YYSsG" }
-            });
-            const result = await response.json();
-            if (result.record && result.record.profile) {
-              setProfile(result.record.profile);
-            }
-          } catch (error) {
-            console.error("Failed to load profile from cloud:", error);
-          }
-        };
-        loadProfileFromCloud();
-    } else {
-      setProjects(DEFAULT_PROJECTS);
-    }
+        
+    const loadData = async () => {
+      try {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/6a162a588ef04f45381f4b84/latest?t=${Date.now()}`, {
+          headers: { 'X-Master-Key': '$2a$10$6WgXpSq5nZyJ.9eytzMwe.1ZH4Qyk2WeMIQLSjCEOlAp6rc2YYSsG' }
+        });
+        const result = await response.json();
+        
+        const projects = result.record?.projects || [];
+        const profile = result.record?.profile || DEFAULT_PROFILE;
+        
+        setProjects(projects);
+        setProfile(profile);
+      } catch (error) {
+        console.error("Failed to load from cloud:", error);
+      }
+    };
+    
+    loadData();
   }, [isAuthenticated]);
 
   const handleLogin = async (e: React.FormEvent) => {
