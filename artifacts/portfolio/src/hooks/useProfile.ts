@@ -50,6 +50,7 @@ export function useProfile() {
         
         if (result.record && result.record.profile) {
           setProfile(result.record.profile);
+          console.log('✅ Profile loaded from cloud');
         } else {
           const stored = localStorage.getItem("portfolio_profile");
           if (stored) {
