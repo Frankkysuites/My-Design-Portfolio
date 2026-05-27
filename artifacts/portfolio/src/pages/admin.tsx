@@ -163,32 +163,71 @@ export default function Admin() {
   };
 
   const handleChangePassword = async () => {
+
     setError("");
-    const storedPassword = localStorage.getItem("admin_password") || DEFAULT_PASSWORD;
+
+    const cloudPassword = await getCloudPassword();
+
+    const storedPassword = cloudPassword || DEFAULT_PASSWORD;
+
     
+
     if (currentPassword !== storedPassword) {
+
       setError("Current password is incorrect");
+
       return;
+
     }
+
     
+
     if (newPassword.length < 4) {
+
       setError("Password must be at least 4 characters");
+
       return;
+
     }
+
     
+
     if (newPassword !== confirmPassword) {
+
       setError("New passwords do not match");
+
       return;
+
     }
+
     
-    localStorage.setItem("admin_password", newPassword);
-    setIsChangingPassword(false);
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    setError("");
-    alert("Password changed successfully! Please login again.");
-    handleLogout();
+
+    const saved = await saveCloudPassword(newPassword);
+
+    if (saved) {
+
+      localStorage.setItem("admin_password", newPassword);
+
+      setIsChangingPassword(false);
+
+      setCurrentPassword("");
+
+      setNewPassword("");
+
+      setConfirmPassword("");
+
+      setError("");
+
+      alert("Password changed successfully! Please login again.");
+
+      handleLogout();
+
+    } else {
+
+      setError("Failed to save password to cloud. Please try again.");
+
+    }
+
   };
 
   const handleLogout = () => {
@@ -578,3 +617,42 @@ export default function Admin() {
   );
 }
 // VERSION: SUPABASE - Wed May 27 02:03:25 PM WAT 2026
+
+// ============================================
+// CLOUD PASSWORD MANAGEMENT
+// ============================================
+
+const getCloudPassword = async (): Promise<string | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'admin_password')
+      .single();
+    
+    if (error && error.code !== 'PGRST116') throw error;
+    return data?.value || null;
+  } catch (error) {
+    console.error('Failed to get password from cloud:', error);
+    return null;
+  }
+};
+
+const saveCloudPassword = async (password: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('settings')
+      .upsert({
+        key: 'admin_password',
+        value: password,
+        updated_at: new Date()
+      }, { onConflict: 'key' });
+    
+    if (error) throw error;
+    console.log('✅ Password saved to cloud');
+    return true;
+  } catch (error) {
+    console.error('Failed to save password to cloud:', error);
+    return false;
+  }
+};
