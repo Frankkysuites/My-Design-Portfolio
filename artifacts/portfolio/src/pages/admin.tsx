@@ -223,6 +223,7 @@ export default function Admin() {
   useEffect(() => {
     if (sessionStorage.getItem("admin_auth") === "true") {
       setIsAuthenticated(true);
+      sessionStorage.setItem("admin_auth", "true");
     }
     setIsLoading(false);
   }, []);
@@ -265,6 +266,7 @@ export default function Admin() {
       if (password === storedPassword) {
         console.log("✅ Login successful!");
         setIsAuthenticated(true);
+      sessionStorage.setItem("admin_auth", "true");
         setPassword("");
         setError("");
       } else {
