@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 const JSONBIN_BIN_ID = "6a162a588ef04f45381f4b84";
-const JSONBIN_API_KEY = "$2a$10$EIl1NhPjoZl3kOB3kTo9kegq0RAxybzMFZC4UE6tgRwI04vlnt1m2";
+const JSONBIN_API_KEY = "$2a$10$loWVTqd3bRDpzhlqgZSmA.fMkYgulcZ32nMc/RHLNPhwkokq8bKCi";
 
 export function useLikes(projectId: number) {
   const [liked, setLiked] = useState(false);

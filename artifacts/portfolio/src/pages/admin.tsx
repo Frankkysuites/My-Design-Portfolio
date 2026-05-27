@@ -122,7 +122,7 @@ const DEFAULT_PROFILE: Profile = {
 
 const DEFAULT_PASSWORD = "admin123";
 const JSONBIN_BIN_ID = "6a162a588ef04f45381f4b84";
-const JSONBIN_API_KEY = "$2a$10$EIl1NhPjoZl3kOB3kTo9kegq0RAxybzMFZC4UE6tgRwI04vlnt1m2";
+const JSONBIN_API_KEY = "$2a$10$loWVTqd3bRDpzhlqgZSmA.fMkYgulcZ32nMc/RHLNPhwkokq8bKCi";
 
 export default function Admin() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -236,7 +236,7 @@ export default function Admin() {
     const loadData = async () => {
       try {
         const response = await fetch(`https://api.jsonbin.io/v3/b/6a162a588ef04f45381f4b84/latest?t=${Date.now()}`, {
-          headers: { 'X-Master-Key': '$2a$10$EIl1NhPjoZl3kOB3kTo9kegq0RAxybzMFZC4UE6tgRwI04vlnt1m2' }
+          headers: { 'X-Master-Key': '$2a$10$loWVTqd3bRDpzhlqgZSmA.fMkYgulcZ32nMc/RHLNPhwkokq8bKCi' }
         });
         const result = await response.json();
         
@@ -404,7 +404,7 @@ export default function Admin() {
     
     try {
       const response = await fetch(`https://api.jsonbin.io/v3/b/6a162a588ef04f45381f4b84/latest?t=${Date.now()}`, {
-        headers: { 'X-Master-Key': '$2a$10$EIl1NhPjoZl3kOB3kTo9kegq0RAxybzMFZC4UE6tgRwI04vlnt1m2' }
+        headers: { 'X-Master-Key': '$2a$10$loWVTqd3bRDpzhlqgZSmA.fMkYgulcZ32nMc/RHLNPhwkokq8bKCi' }
       });
       const result = await response.json();
       const currentProfile = result.record?.profile || {};
@@ -415,7 +415,7 @@ export default function Admin() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'X-Master-Key': '$2a$10$EIl1NhPjoZl3kOB3kTo9kegq0RAxybzMFZC4UE6tgRwI04vlnt1m2'
+          'X-Master-Key': '$2a$10$loWVTqd3bRDpzhlqgZSmA.fMkYgulcZ32nMc/RHLNPhwkokq8bKCi'
         },
         body: JSON.stringify({
           projects: updatedProjects,
@@ -442,7 +442,7 @@ export default function Admin() {
     try {
       // Get current data from cloud
       const response = await fetch(`https://api.jsonbin.io/v3/b/6a162a588ef04f45381f4b84/latest?t=${Date.now()}`, {
-        headers: { 'X-Master-Key': '$2a$10$EIl1NhPjoZl3kOB3kTo9kegq0RAxybzMFZC4UE6tgRwI04vlnt1m2' }
+        headers: { 'X-Master-Key': '$2a$10$loWVTqd3bRDpzhlqgZSmA.fMkYgulcZ32nMc/RHLNPhwkokq8bKCi' }
       });
       const result = await response.json();
       const currentLikes = result.record?.likes || {};
@@ -453,7 +453,7 @@ export default function Admin() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'X-Master-Key': '$2a$10$EIl1NhPjoZl3kOB3kTo9kegq0RAxybzMFZC4UE6tgRwI04vlnt1m2'
+          'X-Master-Key': '$2a$10$loWVTqd3bRDpzhlqgZSmA.fMkYgulcZ32nMc/RHLNPhwkokq8bKCi'
         },
         body: JSON.stringify({
           profile: updatedProfile,

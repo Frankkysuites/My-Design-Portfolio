@@ -43,7 +43,7 @@ export function useProfile() {
       try {
         const response = await fetch(`https://api.jsonbin.io/v3/b/6a162a588ef04f45381f4b84/latest`, {
           headers: { 
-            'X-Master-Key': '$2a$10$EIl1NhPjoZl3kOB3kTo9kegq0RAxybzMFZC4UE6tgRwI04vlnt1m2'
+            'X-Master-Key': '$2a$10$loWVTqd3bRDpzhlqgZSmA.fMkYgulcZ32nMc/RHLNPhwkokq8bKCi'
           }
         });
         const result = await response.json();
