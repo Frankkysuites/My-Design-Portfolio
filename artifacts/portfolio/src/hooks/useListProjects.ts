@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 const JSONBIN_BIN_ID = "6a162a588ef04f45381f4b84";
-const JSONBIN_API_KEY = "$2a$10$IZ1zaInGt8xyrQ7bFQIIL.juDHxBr8ov9M7GZm7zd4oY4yDARChZi";
+const JSONBIN_API_KEY = "$2a$10$6WgXpSq5nZyJ.9eytzMwe.1ZH4Qyk2WeMIQLSjCEOlAp6rc2YYSsG";
 
 export function useListProjects(params?: { category?: string }) {
   const [data, setData] = useState<any[]>([]);
