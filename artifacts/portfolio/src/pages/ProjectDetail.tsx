@@ -17,6 +17,9 @@ import { FaDribbble, FaBehance, FaLinkedin, FaInstagram, FaWhatsapp } from "reac
 import { useLikes } from "@/hooks/useLikes";
 import type { Project, ProjectFile } from "@/types/project";
 
+const JSONBIN_BIN_ID = "6a162a588ef04f45381f4b84";
+const JSONBIN_API_KEY = "$2a$10$6WgXpSq5nZyJ.9eytzMwe.1ZH4Qyk2WeMIQLSjCEOlAp6rc2YYSsG";
+
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
@@ -28,19 +31,33 @@ export default function ProjectDetail() {
   const { liked, likeCount, isLoading: likesLoading, toggleLike } = useLikes(parseInt(id!));
 
   useEffect(() => {
-    const storedProjects = localStorage.getItem("portfolio_projects");
-    if (storedProjects) {
-      const projects: Project[] = JSON.parse(storedProjects);
-      const found = projects.find(p => p.id === parseInt(id!));
-      setProject(found || null);
-    }
+    const fetchData = async () => {
+      try {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+          headers: { 'X-Master-Key': JSONBIN_API_KEY }
+        });
+        const result = await response.json();
+        
+        // Fetch project from cloud
+        let projects = [];
+        if (result.record && result.record.projects) {
+          projects = result.record.projects;
+        }
+        const found = projects.find(p => p.id === parseInt(id!));
+        setProject(found || null);
+        
+        // Fetch profile from cloud
+        if (result.record && result.record.profile) {
+          setProfile(result.record.profile);
+        }
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+        setProject(null);
+      }
+      setIsLoading(false);
+    };
     
-    const storedProfile = localStorage.getItem("portfolio_profile");
-    if (storedProfile) {
-      setProfile(JSON.parse(storedProfile));
-    }
-    
-    setIsLoading(false);
+    fetchData();
     window.scrollTo(0, 0);
   }, [id]);
 
@@ -278,22 +295,14 @@ export default function ProjectDetail() {
 
               <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 text-center">
                 <Avatar className="w-16 h-16 mx-auto mb-2">
-                  {(() => {
-                    try {
-                      const storedProfile = localStorage.getItem("portfolio_profile");
-                      const profileData = storedProfile ? JSON.parse(storedProfile) : {};
-                      return <img src={profileData.imageUrl || "https://picsum.photos/id/64/100/100"} alt="Designer" className="rounded-full" />;
-                    } catch {
-                      return <AvatarFallback>FA</AvatarFallback>;
-                    }
-                  })()}
+                  <img src={profile?.imageUrl || "https://picsum.photos/id/64/100/100"} alt="Designer" className="rounded-full" />
                 </Avatar>
-                <h4 className="font-semibold text-gray-900 dark:text-white">Frank Aronu</h4>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Designer</p>
+                <h4 className="font-semibold text-gray-900 dark:text-white">{profile?.name || "Frank Aronu"}</h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{profile?.title || "Designer"}</p>
                 <div className="flex justify-center gap-3">
-                  <a href="#" className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><FaBehance size={14} /></a>
-                  <a href="#" className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><FaDribbble size={14} /></a>
-                  <a href="#" className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><FaLinkedin size={14} /></a>
+                  <a href={profile?.social?.behance || "#"} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><FaBehance size={14} /></a>
+                  <a href={profile?.social?.dribbble || "#"} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><FaDribbble size={14} /></a>
+                  <a href={profile?.social?.linkedin || "#"} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><FaLinkedin size={14} /></a>
                 </div>
               </div>
 
