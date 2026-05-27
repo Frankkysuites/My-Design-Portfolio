@@ -221,7 +221,7 @@ export default function Admin() {
   };
 
   useEffect(() => {
-    if (localStorage.getItem("admin_auth") === "true" === "true") {
+    if (sessionStorage.getItem("admin_auth") === "true") {
       setIsAuthenticated(true);
     }
     setIsLoading(false);
