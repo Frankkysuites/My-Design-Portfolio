@@ -13,9 +13,8 @@ import {
   X,
   ZoomIn
 } from "lucide-react";
-import { useLikes } from "@/hooks/useLikes";
-import { useLikes } from "@/hooks/useLikes";
 import { FaDribbble, FaBehance, FaLinkedin, FaInstagram, FaWhatsapp } from "react-icons/fa";
+import { useLikes } from "@/hooks/useLikes";
 import type { Project, ProjectFile } from "@/types/project";
 
 export default function ProjectDetail() {
@@ -27,32 +26,21 @@ export default function ProjectDetail() {
   const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
   const [profile, setProfile] = useState<any>(null);
   const { liked, likeCount, isLoading: likesLoading, toggleLike } = useLikes(parseInt(id!));
-  const { liked, likeCount, isLoading: likesLoading, toggleLike } = useLikes(parseInt(id!));
 
   useEffect(() => {
+    const storedProjects = localStorage.getItem("portfolio_projects");
+    if (storedProjects) {
+      const projects: Project[] = JSON.parse(storedProjects);
+      const found = projects.find(p => p.id === parseInt(id!));
+      setProject(found || null);
+    }
     
-    const fetchProject = async () => {
-      try {
-        const response = await fetch(`https://api.jsonbin.io/v3/b/6a162a588ef04f45381f4b84/latest`, {
-          headers: { 
-            'X-Master-Key': '$2a$10$6WgXpSq5nZyJ.9eytzMwe.1ZH4Qyk2WeMIQLSjCEOlAp6rc2YYSsG'
-          }
-        });
-        const result = await response.json();
-        let projects = [];
-        if (result.record && result.record.projects) {
-          projects = result.record.projects;
-        }
-        const found = projects.find(p => p.id === parseInt(id!));
-        setProject(found || null);
-      } catch (error) {
-        console.error('Failed to fetch project:', error);
-        setProject(null);
-      }
-      setIsLoading(false);
-    };
+    const storedProfile = localStorage.getItem("portfolio_profile");
+    if (storedProfile) {
+      setProfile(JSON.parse(storedProfile));
+    }
     
-    fetchProject();
+    setIsLoading(false);
     window.scrollTo(0, 0);
   }, [id]);
 
@@ -84,9 +72,6 @@ export default function ProjectDetail() {
 
   const handleLike = () => {
     toggleLike();
-  };
-    likes[id!] = { liked: newLiked, count: newCount };
-    localStorage.setItem("project_likes", JSON.stringify(likes));
   };
 
   const handleContact = () => {
