@@ -288,7 +288,7 @@ export default function ProjectDetail() {
       {isLightboxOpen && (
         <div className="fixed inset-0 z-50 bg-black overflow-y-auto">
           <div className="sticky top-0 z-10 flex justify-between items-center p-4 bg-black/80 backdrop-blur-sm">
-            <span className="text-white text-sm">{allImages.length} images}</span>
+            <span className="text-white text-sm">{allImages.length} images</span>
             <button
               onClick={closeLightbox}
               className="text-white hover:text-gray-300 transition-colors"
