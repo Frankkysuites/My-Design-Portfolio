@@ -211,17 +211,28 @@ export default function Admin() {
 }, [isAuthenticated]);
 
   const handleLogin = async (e: React.FormEvent) => {
+    console.log("🔐 Login button clicked");
+    console.log("Password entered:", password);
     e.preventDefault();
-    const storedPassword = cloudPassword || DEFAULT_PASSWORD;
-    if (password === storedPassword) {
-      setIsAuthenticated(true);
-      localStorage.setItem("admin_auth", "true");
-      setPassword("");
-      setError("");
-    const cloudPassword = await getPasswordFromCloud();
-
-    } else {
-      setError("Wrong password");
+    try {
+      console.log("Fetching cloud password...");
+      const cloudPassword = await getPasswordFromCloud();
+      console.log("Cloud password:", cloudPassword);
+      const storedPassword = cloudPassword || DEFAULT_PASSWORD;
+      console.log("Stored password (after default):", storedPassword);
+      if (password === storedPassword) {
+        console.log("✅ Login successful!");
+        setIsAuthenticated(true);
+        localStorage.setItem("admin_auth", "true");
+        setPassword("");
+        setError("");
+      } else {
+        console.log("❌ Wrong password");
+        setError("Wrong password");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      setError("Login failed. Please try again.");
     }
   };
 
