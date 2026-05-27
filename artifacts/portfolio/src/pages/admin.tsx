@@ -344,7 +344,7 @@ export default function Admin() {
 
 const saveProjectsToCloud = async (updatedProjects: Project[]) => {
   const JSONBIN_BIN_ID = "6a162a588ef04f45381f4b84";
-  const JSONBIN_API_KEY = "$2a$10$2I7wxlcZe608gOfKaQ7P.eaEJseoNK6tBLKrkL83wwQDS61gZzs7S";
+  const JSONBIN_API_KEY = "$2a$10$IZ1zaInGt8xyrQ7bFQIIL.juDHxBr8ov9M7GZm7zd4oY4yDARChZi";
   
   try {
     const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
@@ -375,7 +375,7 @@ const saveProjectsToCloud = async (updatedProjects: Project[]) => {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'X-Master-Key': '$2a$10$2I7wxlcZe608gOfKaQ7P.eaEJseoNK6tBLKrkL83wwQDS61gZzs7S'
+        'X-Master-Key': '$2a$10$IZ1zaInGt8xyrQ7bFQIIL.juDHxBr8ov9M7GZm7zd4oY4yDARChZi'
       },
       body: JSON.stringify({ projects: updatedProjects })
     });

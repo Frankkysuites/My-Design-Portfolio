@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 const JSONBIN_BIN_ID = "6a162a588ef04f45381f4b84";
-const JSONBIN_API_KEY = "$2a$10$2I7wxlcZe608gOfKaQ7P.eaEJseoNK6tBLKrkL83wwQDS61gZzs7S";
+const JSONBIN_API_KEY = "$2a$10$IZ1zaInGt8xyrQ7bFQIIL.juDHxBr8ov9M7GZm7zd4oY4yDARChZi";
 
 export function useListProjects(params?: { category?: string }) {
   const [data, setData] = useState<any[]>([]);
@@ -18,8 +18,8 @@ export function useListProjects(params?: { category?: string }) {
         });
         
         const result = await response.json();
+        console.log('Cloud response:', result);
         
-        // Extract projects from cloud
         let projects = [];
         if (result.record && result.record.projects) {
           projects = result.record.projects;
@@ -27,7 +27,6 @@ export function useListProjects(params?: { category?: string }) {
         
         console.log(`Loaded ${projects.length} projects from cloud`);
         
-        // Filter if needed
         if (params?.category && params.category !== "All") {
           projects = projects.filter((p: any) => p.category === params.category);
         }
