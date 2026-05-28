@@ -74,6 +74,39 @@ export default function Admin() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
+
+  // Handle profile image upload
+  const handleProfileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB');
+      return;
+    }
+    
+    setUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfile({ ...profile, image_url: reader.result as string });
+        setUploading(false);
+      };
+      reader.onerror = () => {
+        alert('Failed to upload image');
+        setUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      alert('Failed to upload image');
+      setUploading(false);
+    }
+  };
   const fileInputRef = useRef<HTMLInputElement>(null);
   const projectFileInputRef = useRef<HTMLInputElement>(null);
   
@@ -404,7 +437,7 @@ export default function Admin() {
             {error && <p className="text-red-500 text-sm">{error}</p>}
             <Button type="submit" className="w-full">Login</Button>
           </form>
-          <p className="text-sm text-gray-500 mt-4 text-center">Default password: admin123</p>
+          <p className="text-sm text-gray-500 mt-4 text-center"></p>
         </div>
       </div>
     );
