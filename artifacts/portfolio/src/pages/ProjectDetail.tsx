@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,7 @@ import {
   ZoomIn,
   Share2
 } from "lucide-react";
-import { FaDribbble, FaBehance, FaLinkedin, FaInstagram, FaWhatsapp } from "react-icons/fa";
+import { FaDribbble, FaBehance, FaLinkedin, FaInstagram, FaWhatsapp, FaFacebook, FaTwitter } from "react-icons/fa";
 import { useLikes } from "@/hooks/useLikes";
 import { supabase } from "@/lib/supabase";
 
@@ -87,7 +87,40 @@ export default function ProjectDetail() {
   };
 
   
-  const handleShare = async () => {
+  
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const shareMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close share menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (shareMenuRef.current && !shareMenuRef.current.contains(event.target as Node)) {
+        setShowShareMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const shareLinks = {
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`,
+    twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(project?.title || '')}&url=${encodeURIComponent(window.location.href)}`,
+    linkedin: `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(window.location.href)}&title=${encodeURIComponent(project?.title || '')}`,
+    whatsapp: `https://wa.me/?text=${encodeURIComponent(project?.title + ' - ' + window.location.href)}`,
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      alert('Link copied to clipboard!');
+      setShowShareMenu(false);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      alert('Press Ctrl+C to copy the link');
+    }
+  };
+
+  const handleShare = () => { setShowShareMenu(!showShareMenu); };
     const url = window.location.href;
     const title = project?.title || "Check out this project";
     
@@ -182,7 +215,7 @@ export default function ProjectDetail() {
 
       {/* Like and Share Buttons */}
       <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center">
           <button
             onClick={toggleLike}
             className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full transition-all duration-200 group"
@@ -193,13 +226,71 @@ export default function ProjectDetail() {
             <span className="text-lg font-medium text-gray-700 dark:text-gray-300">{likeCount}</span>
           </button>
           
-          <button
-            onClick={handleShare}
-            className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 group"
-          >
-            <Share2 className="w-6 h-6 text-gray-600 dark:text-gray-400 group-hover:text-blue-500" />
-            <span className="text-lg font-medium text-gray-700 dark:text-gray-300">Share</span>
-          </button>
+          <div className="relative" ref={shareMenuRef}>
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 group"
+            >
+              <Share2 className="w-6 h-6 text-gray-600 dark:text-gray-400 group-hover:text-blue-500" />
+              <span className="text-lg font-medium text-gray-700 dark:text-gray-300">Share</span>
+            </button>
+            
+            {showShareMenu && (
+              <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-2 z-50 min-w-[200px]">
+                <div className="space-y-1">
+                  <a
+                    href={shareLinks.facebook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setShowShareMenu(false)}
+                    className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <FaFacebook className="w-5 h-5 text-[#1877f2]" />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Facebook</span>
+                  </a>
+                  <a
+                    href={shareLinks.twitter}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setShowShareMenu(false)}
+                    className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <FaTwitter className="w-5 h-5 text-[#1da1f2]" />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Twitter</span>
+                  </a>
+                  <a
+                    href={shareLinks.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setShowShareMenu(false)}
+                    className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <FaLinkedin className="w-5 h-5 text-[#0077b5]" />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">LinkedIn</span>
+                  </a>
+                  <a
+                    href={shareLinks.whatsapp}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setShowShareMenu(false)}
+                    className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <FaWhatsapp className="w-5 h-5 text-[#25d366]" />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">WhatsApp</span>
+                  </a>
+                  <button
+                    onClick={copyToClipboard}
+                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    </svg>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Copy Link</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
