@@ -28,7 +28,7 @@ export default function ProjectDetail() {
   const [profile, setProfile] = useState<any>(null);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const shareMenuRef = useRef<HTMLDivElement>(null);
-  const { liked, likeCount, isLoading: likesLoading, toggleLike } = useLikes(slug || "");
+  const { liked, likeCount, isLoading: likesLoading, addLike } = useLikes(slug || "");
 
   // Close share menu when clicking outside
   useEffect(() => {
@@ -189,7 +189,7 @@ export default function ProjectDetail() {
       <div className="max-w-7xl mx-auto px-6 py-6">
         <div className="flex gap-4 items-center">
           <button
-            onClick={toggleLike}
+            onClick={addLike}
             className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full transition-all duration-200 group"
           >
             <Heart 

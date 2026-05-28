@@ -13,7 +13,6 @@ export function useLikes(slugOrId: string) {
       
       let query = supabase.from('projects').select('id');
       
-      // Check if it's a number (ID) or string (slug)
       if (/^\d+$/.test(slugOrId)) {
         query = query.eq('id', parseInt(slugOrId));
       } else {
@@ -24,13 +23,20 @@ export function useLikes(slugOrId: string) {
       
       if (!error && data) {
         setProjectId(data.id);
-      } else {
-        console.error('Project not found:', slugOrId);
       }
     };
     
     fetchProjectId();
   }, [slugOrId]);
+
+  // Check if user has already liked this project (using localStorage)
+  useEffect(() => {
+    if (!projectId) return;
+    
+    const likedKey = `liked_project_${projectId}`;
+    const hasLiked = localStorage.getItem(likedKey) === 'true';
+    setLiked(hasLiked);
+  }, [projectId]);
 
   useEffect(() => {
     const fetchLikes = async () => {
@@ -39,7 +45,7 @@ export function useLikes(slugOrId: string) {
       try {
         const { data, error } = await supabase
           .from('likes')
-          .select('liked, count')
+          .select('count')
           .eq('project_id', projectId)
           .maybeSingle();
         
@@ -49,7 +55,6 @@ export function useLikes(slugOrId: string) {
         }
         
         if (data) {
-          setLiked(data.liked || false);
           setLikeCount(data.count || 0);
         }
       } catch (error) {
@@ -62,29 +67,39 @@ export function useLikes(slugOrId: string) {
     fetchLikes();
   }, [projectId]);
 
-  const toggleLike = async () => {
+  const addLike = async () => {
     if (!projectId) return;
     
-    const newLiked = !liked;
-    const newCount = newLiked ? likeCount + 1 : likeCount - 1;
+    const likedKey = `liked_project_${projectId}`;
+    
+    // Check if user already liked
+    if (localStorage.getItem(likedKey) === 'true') {
+      console.log('User already liked this project');
+      return;
+    }
+    
+    const newCount = likeCount + 1;
     
     try {
+      // Update the count (increment by 1, don't toggle)
       const { error } = await supabase
         .from('likes')
         .upsert({
           project_id: projectId,
-          liked: newLiked,
           count: newCount
         }, { onConflict: 'project_id' });
       
       if (error) throw error;
       
-      setLiked(newLiked);
+      // Mark this user as having liked
+      localStorage.setItem(likedKey, 'true');
+      setLiked(true);
       setLikeCount(newCount);
+      console.log(`✅ Liked! Total likes: ${newCount}`);
     } catch (error) {
       console.error('Failed to update like:', error);
     }
   };
 
-  return { liked, likeCount, isLoading, toggleLike };
+  return { liked, likeCount, isLoading, addLike };
 }
