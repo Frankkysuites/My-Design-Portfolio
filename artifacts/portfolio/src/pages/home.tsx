@@ -46,7 +46,7 @@ export default function Home() {
           <div className="flex-shrink-0">
             <div className="w-40 h-40 md:w-52 md:h-52 rounded-full overflow-hidden bg-gradient-to-br from-purple-500 to-pink-500 p-1">
               <img
-                src={profile.image_url}
+                src={profile.imageUrl}
                 alt={profile.name}
                 className="w-full h-full rounded-full object-cover"
               />
