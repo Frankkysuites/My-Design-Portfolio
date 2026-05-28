@@ -1,32 +1,37 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
-export function useLikes(slug: string) {
+export function useLikes(slugOrId: string) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [projectId, setProjectId] = useState<number | null>(null);
 
-  // First fetch project ID from slug
   useEffect(() => {
     const fetchProjectId = async () => {
-      if (!slug) return;
+      if (!slugOrId) return;
       
-      const { data, error } = await supabase
-        .from('projects')
-        .select('id')
-        .eq('slug', slug)
-        .single();
+      let query = supabase.from('projects').select('id');
+      
+      // Check if it's a number (ID) or string (slug)
+      if (/^\d+$/.test(slugOrId)) {
+        query = query.eq('id', parseInt(slugOrId));
+      } else {
+        query = query.eq('slug', slugOrId);
+      }
+      
+      const { data, error } = await query.maybeSingle();
       
       if (!error && data) {
         setProjectId(data.id);
+      } else {
+        console.error('Project not found:', slugOrId);
       }
     };
     
     fetchProjectId();
-  }, [slug]);
+  }, [slugOrId]);
 
-  // Then fetch likes using project ID
   useEffect(() => {
     const fetchLikes = async () => {
       if (!projectId) return;
