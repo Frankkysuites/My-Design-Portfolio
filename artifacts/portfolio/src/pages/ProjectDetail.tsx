@@ -25,16 +25,16 @@ export default function ProjectDetail() {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
   const [profile, setProfile] = useState<any>(null);
-  const { liked, likeCount, isLoading: likesLoading, toggleLike } = useLikes(0);
+  const { liked, likeCount, isLoading: likesLoading, toggleLike } = useLikes(slug || "");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch project
+        // Fetch project by slug
         const { data: projectData, error: projectError } = await supabase
           .from('projects')
           .select('*')
-          .eq('id', parseInt(id!))
+          .eq('slug', slug)
           .single();
         
         if (projectError) throw projectError;
@@ -57,7 +57,7 @@ export default function ProjectDetail() {
     
     fetchData();
     window.scrollTo(0, 0);
-  }, [id]);
+  }, [slug]);
 
   const getAllImages = () => {
     if (!project) return [];
@@ -114,7 +114,7 @@ export default function ProjectDetail() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
-      {/* Navigation Bar - Sticky */}
+      {/* Navigation Bar */}
       <nav className="sticky top-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
@@ -139,8 +139,6 @@ export default function ProjectDetail() {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
         </div>
-        
-        {/* Project Title Overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-12 text-white">
           <div className="max-w-7xl mx-auto">
             <Badge className="mb-3 bg-white/20 text-white border-white/30">
@@ -153,7 +151,7 @@ export default function ProjectDetail() {
         </div>
       </div>
 
-      {/* Like Button - Under Cover Photo */}
+      {/* Like Button */}
       <div className="max-w-7xl mx-auto px-6 py-6">
         <div className="flex justify-start">
           <button
@@ -168,7 +166,7 @@ export default function ProjectDetail() {
         </div>
       </div>
 
-      {/* Rest of the component - keep the same JSX structure */}
+      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           <div className="lg:col-span-2 space-y-8">
@@ -178,13 +176,20 @@ export default function ProjectDetail() {
               </p>
             </section>
 
-            {/* Image Gallery - Tiles Grid */}
+            <div className="flex flex-wrap gap-2">
+              {["Adobe Suite", "Figma", "Illustrator", "Photoshop"].map(tool => (
+                <span key={tool} className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-xs text-gray-600 dark:text-gray-400">
+                  {tool}
+                </span>
+              ))}
+            </div>
+
+            {/* Gallery */}
             <section>
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Gallery</h2>
                 <span className="text-sm text-gray-500 dark:text-gray-400">{allImages.length} images</span>
               </div>
-              
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {allImages.map((img, idx) => (
                   <div
@@ -205,7 +210,7 @@ export default function ProjectDetail() {
               </div>
             </section>
 
-            {/* Videos Section */}
+            {/* Videos */}
             {videoFiles.length > 0 && (
               <section>
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Videos</h2>
@@ -219,7 +224,7 @@ export default function ProjectDetail() {
               </section>
             )}
 
-            {/* PDF Documents */}
+            {/* PDFs */}
             {pdfFiles.length > 0 && (
               <section>
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Documents</h2>
@@ -244,7 +249,7 @@ export default function ProjectDetail() {
             )}
           </div>
 
-          {/* Right Column - Sidebar */}
+          {/* Sidebar */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-5">
               <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5">
@@ -284,26 +289,19 @@ export default function ProjectDetail() {
         </div>
       </div>
 
-      {/* Vertical Scroll Lightbox */}
+      {/* Lightbox */}
       {isLightboxOpen && (
         <div className="fixed inset-0 z-50 bg-black overflow-y-auto">
           <div className="sticky top-0 z-10 flex justify-between items-center p-4 bg-black/80 backdrop-blur-sm">
             <span className="text-white text-sm">{allImages.length} images</span>
-            <button
-              onClick={closeLightbox}
-              className="text-white hover:text-gray-300 transition-colors"
-            >
+            <button onClick={closeLightbox} className="text-white hover:text-gray-300">
               <X className="w-6 h-6" />
             </button>
           </div>
           <div className="pb-8">
             {allImages.map((img, idx) => (
               <div key={idx} className="w-full">
-                <img 
-                  src={img.url} 
-                  alt=""
-                  className="w-full h-auto"
-                />
+                <img src={img.url} alt="" className="w-full h-auto" />
               </div>
             ))}
           </div>
