@@ -26,12 +26,24 @@ export default function ProjectDetail() {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
   const [profile, setProfile] = useState<any>(null);
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const shareMenuRef = useRef<HTMLDivElement>(null);
   const { liked, likeCount, isLoading: likesLoading, toggleLike } = useLikes(slug || "");
+
+  // Close share menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (shareMenuRef.current && !shareMenuRef.current.contains(event.target as Node)) {
+        setShowShareMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch project by slug
         const { data: projectData, error: projectError } = await supabase
           .from('projects')
           .select('*')
@@ -41,7 +53,6 @@ export default function ProjectDetail() {
         if (projectError) throw projectError;
         setProject(projectData);
         
-        // Fetch profile
         const { data: profileData, error: profileError } = await supabase
           .from('profile')
           .select('*')
@@ -86,21 +97,10 @@ export default function ProjectDetail() {
     document.body.style.overflow = "auto";
   };
 
-  
-  
-  const [showShareMenu, setShowShareMenu] = useState(false);
-  const shareMenuRef = useRef<HTMLDivElement>(null);
-
-  // Close share menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (shareMenuRef.current && !shareMenuRef.current.contains(event.target as Node)) {
-        setShowShareMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const handleContact = () => {
+    const email = profile?.email || "hello.frankaronu.designs@gmail.com";
+    window.location.href = `mailto:${email}?subject=Inquiry about ${project?.title}&body=Hi Frank, I'm interested in your project "${project?.title}"...`;
+  };
 
   const shareLinks = {
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`,
@@ -120,36 +120,8 @@ export default function ProjectDetail() {
     }
   };
 
-  const handleShare = async () => { setShowShareMenu(!showShareMenu); };
-    const url = window.location.href;
-    const title = project?.title || "Check out this project";
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: title,
-          text: `Check out "${title}" by Frank Aronu`,
-          url: url,
-        });
-      } catch (err) {
-        console.log('Share cancelled or failed:', err);
-      }
-    } else {
-      // Fallback - copy to clipboard
-      try {
-        await navigator.clipboard.writeText(url);
-        alert('Link copied to clipboard!');
-      } catch (err) {
-        console.error('Failed to copy:', err);
-        alert('Press Ctrl+C to copy the link: ' + url);
-      }
-    }
-  };
-
-
-  const handleContact = () => {
-    const email = profile?.email || "hello.frankaronu.designs@gmail.com";
-    window.location.href = `mailto:${email}?subject=Inquiry about ${project?.title}&body=Hi Frank, I'm interested in your project "${project?.title}"...`;
+  const handleShareClick = () => {
+    setShowShareMenu(!showShareMenu);
   };
 
   if (isLoading) {
@@ -228,7 +200,7 @@ export default function ProjectDetail() {
           
           <div className="relative" ref={shareMenuRef}>
             <button
-              onClick={handleShare}
+              onClick={handleShareClick}
               className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 group"
             >
               <Share2 className="w-6 h-6 text-gray-600 dark:text-gray-400 group-hover:text-blue-500" />
