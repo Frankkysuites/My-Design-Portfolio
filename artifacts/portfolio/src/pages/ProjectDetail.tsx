@@ -18,14 +18,14 @@ import { useLikes } from "@/hooks/useLikes";
 import { supabase } from "@/lib/supabase";
 
 export default function ProjectDetail() {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const [, setLocation] = useLocation();
   const [project, setProject] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
   const [profile, setProfile] = useState<any>(null);
-  const { liked, likeCount, isLoading: likesLoading, toggleLike } = useLikes(parseInt(id!));
+  const { liked, likeCount, isLoading: likesLoading, toggleLike } = useLikes(0);
 
   useEffect(() => {
     const fetchData = async () => {

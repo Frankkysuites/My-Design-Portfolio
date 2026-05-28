@@ -132,7 +132,7 @@ export default function Home() {
             {projects?.map((project) => (
               <div
                 key={project.id}
-                onClick={() => window.location.href = `/project/${project.id}`}
+                onClick={() => window.location.href = `/project/${project.slug}`}
                 className="group cursor-pointer"
               >
                 <div className="relative overflow-hidden rounded-2xl bg-muted">

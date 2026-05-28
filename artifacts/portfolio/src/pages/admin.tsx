@@ -73,6 +73,15 @@ export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  
+  // Generate slug from title
+  const generateSlug = (title: string): string => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+  };
+
   const [uploading, setUploading] = useState(false);
 
   // Handle profile image upload
@@ -324,6 +333,7 @@ export default function Admin() {
     const { data, error } = await supabase
       .from('projects')
       .insert({
+        slug: generateSlug(newProject.title),
         title: newProject.title,
         category: newProject.category,
         description: newProject.description,
@@ -369,6 +379,7 @@ export default function Admin() {
     const { error } = await supabase
       .from('projects')
       .update({
+        slug: generateSlug(updatedProject.title),
         title: updatedProject.title,
         category: updatedProject.category,
         description: updatedProject.description,
