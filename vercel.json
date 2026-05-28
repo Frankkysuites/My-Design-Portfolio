@@ -1,6 +1,9 @@
 {
-  "installCommand": "pnpm install --no-frozen-lockfile",
   "buildCommand": "cd artifacts/portfolio && pnpm run build",
   "outputDirectory": "artifacts/portfolio/dist",
-  "framework": "vite"
+  "framework": "vite",
+  "env": {
+    "VITE_SUPABASE_URL": "https://acbhiirlijxczlpmmarb.supabase.co",
+    "VITE_SUPABASE_ANON_KEY": "sb_publishable_pH93IGUl9hJnDNdTPhuZTA_TQ77nJ0_"
+  }
 }
