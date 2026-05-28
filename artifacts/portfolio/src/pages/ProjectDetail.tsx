@@ -11,7 +11,8 @@ import {
   ExternalLink,
   MessageCircle,
   X,
-  ZoomIn
+  ZoomIn,
+  Share2
 } from "lucide-react";
 import { FaDribbble, FaBehance, FaLinkedin, FaInstagram, FaWhatsapp } from "react-icons/fa";
 import { useLikes } from "@/hooks/useLikes";
@@ -85,6 +86,34 @@ export default function ProjectDetail() {
     document.body.style.overflow = "auto";
   };
 
+  
+  const handleShare = async () => {
+    const url = window.location.href;
+    const title = project?.title || "Check out this project";
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: title,
+          text: `Check out "${title}" by Frank Aronu`,
+          url: url,
+        });
+      } catch (err) {
+        console.log('Share cancelled or failed:', err);
+      }
+    } else {
+      // Fallback - copy to clipboard
+      try {
+        await navigator.clipboard.writeText(url);
+        alert('Link copied to clipboard!');
+      } catch (err) {
+        console.error('Failed to copy:', err);
+        alert('Press Ctrl+C to copy the link: ' + url);
+      }
+    }
+  };
+
+
   const handleContact = () => {
     const email = profile?.email || "hello.frankaronu.designs@gmail.com";
     window.location.href = `mailto:${email}?subject=Inquiry about ${project?.title}&body=Hi Frank, I'm interested in your project "${project?.title}"...`;
@@ -151,9 +180,9 @@ export default function ProjectDetail() {
         </div>
       </div>
 
-      {/* Like Button */}
+      {/* Like and Share Buttons */}
       <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="flex justify-start">
+        <div className="flex gap-4">
           <button
             onClick={toggleLike}
             className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full transition-all duration-200 group"
@@ -162,6 +191,14 @@ export default function ProjectDetail() {
               className={`w-8 h-8 transition-all ${liked ? "fill-red-500 text-red-500" : "text-gray-500 dark:text-gray-400 group-hover:text-red-400"}`} 
             />
             <span className="text-lg font-medium text-gray-700 dark:text-gray-300">{likeCount}</span>
+          </button>
+          
+          <button
+            onClick={handleShare}
+            className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 group"
+          >
+            <Share2 className="w-6 h-6 text-gray-600 dark:text-gray-400 group-hover:text-blue-500" />
+            <span className="text-lg font-medium text-gray-700 dark:text-gray-300">Share</span>
           </button>
         </div>
       </div>
